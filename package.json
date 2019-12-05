@@ -7,6 +7,7 @@
     "build-babel": "babel -d ./build ./src -s",
     "build": "npm run clean && npm run build-babel",
     "dev": "DEBUG=api* NODE_ENV=development nodemon --exec babel-node ./src/index.js",
+    "w-dev": "set DEBUG=api* && set NODE_ENV=development && nodemon --exec babel-node ./src/index.js",
     "start": "NODE_ENV=production node ./build/index.js",
     "lint": "npx standard",
     "clean": "rm -rf build && mkdir build"
