@@ -4,4 +4,4 @@ const schema = new Schema({
   test: { type: String }
 });
 
-export default mongoose.model('Admin', schema);
+export default mongoose.model('Test', schema);
