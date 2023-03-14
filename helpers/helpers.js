@@ -1,31 +1,12 @@
-const url = require("url");
-const fs = require("fs");
-const _ = require("lodash");
-const moment = require("moment");
-const uuid = require("uuid");
-import jwt from "jsonwebtoken";
-import Debug from "debug";
-import settings from "../config/settings";
+//TODO refactor this helpers (are bad written and old)
+import url from "url";
+import fs from "fs";
+import _ from 'loadsh'
+import uuid from 'uuid';
+import { createToken } from "./token";
 
-const debug = new Debug("api/_helpers/");
-
-// **** TOKEN  ****
-
-const createToken = async data => {
-  try {
-    console.log("inside createtoken:", data);
-    const token = jwt.sign({ data }, settings.token.secret);
-    return Promise.resolve(token);
-  } catch (error) {
-    console.log("token err:", error);
-    return Promise.reject(error);
-  }
-};
-
-// **** TOKEN  ****
-
-module.exports = {
-  upload: function(req, res, next, cb) {
+ export default {
+  upload: function (req, res, next, cb) {
     var prefix = "";
     if (req.originalUrl) {
       var p = req.originalUrl.split("/");
@@ -41,18 +22,20 @@ module.exports = {
       var tmp = file.type.split("/");
       if (tmp.length == 2 && (tmp[0] == "image" || tmp[1] == "pdf")) {
         var newFileName = prefix + uuid.v4() + "." + tmp[1];
-        fs.rename(file.path, req.settings.imagesDir + newFileName, function(
-          err
-        ) {
-          if (err) {
-            return res.status(400).json({ errors: _self.formatErrors(err) });
-          } else {
-            if (cb) {
-              cb(newFileName);
+        fs.rename(
+          file.path,
+          req.settings.imagesDir + newFileName,
+          function (err) {
+            if (err) {
+              return res.status(400).json({ errors: _self.formatErrors(err) });
+            } else {
+              if (cb) {
+                cb(newFileName);
+              }
+              return res.status(200).json({ file: newFileName });
             }
-            return res.status(200).json({ file: newFileName });
           }
-        });
+        );
       } else {
         return res.status(400).json({ errors: "No image files uploaded" });
       }
@@ -61,65 +44,21 @@ module.exports = {
     }
   },
 
-  // deleteFiles: function (req, res) {
-  //   console.log('entro', req.body)
-  //   if (req.body) {
-
-  //     var promises = [];
-  //     const storage = new Storage({
-  //       projectId: req.settings.storage.projectId,
-  //     });
-
-  //     req.body.forEach(el => {
-  //       fs.unlink(`${req.settings.imagesDir}/${el}`, err => {
-  //         console.log(`error al borrar el archivo. ${err}`)
-  //       });
-  //       fs.unlink(`${req.settings.imagesDir}/small-${el}`, err => {
-  //         if (err) {
-  //           console.log(`error al borrar el archivo. ${err}`)
-  //         }
-  //       });
-
-  //       promises.push(
-  //         storage
-  //           .bucket(req.settings.storage.bucketName)
-  //           .file(el)
-  //           .delete()
-  //       );
-  //     });
-
-  //     Promise.all(promises)
-  //       .then(() => {
-  //         res.status(200).send({ message: 'Archivos borrados con exito' })
-  //       })
-  //       .catch((e) => {
-  //         console.error('ERROR:', e);
-  //         return res.status(400).send({ errors: e.message });
-  //       });
-
-  //   } else {
-  //     res.status(400).send({
-  //       message: 'bad request',
-  //       body: req.body
-  //     })
-  //   }
-  // },
-
-  deleteFiles: function(req, res) {
+  deleteFiles: function (req, res) {
     console.log("entro", req.body);
     if (req.body) {
-      req.body.forEach(el => {
-        fs.unlink(`${req.settings.imagesDir}/${el}`, err => {
+      req.body.forEach((el) => {
+        fs.unlink(`${req.settings.imagesDir}/${el}`, (err) => {
           console.log(`error al borrar el archivo. ${err}`);
         });
       });
       res.status(200).json({
-        message: "Imagenes borradas con exito"
+        message: "Imagenes borradas con exito",
       });
     } else {
       res.status(400).json({
         message: "bad request",
-        body: req.body
+        body: req.body,
       });
     }
   },
@@ -127,69 +66,69 @@ module.exports = {
   findById: (model, req, res) => {
     model
       .findById(req.params.id)
-      .then(item => {
+      .then((item) => {
         console.log(`finbyid then`, item);
         if (item) {
           res.status(200).json(item);
         } else {
           res.status(404).json({
-            message: `No se ha encontrado objecto con id: ${req.params.id}`
+            message: `No se ha encontrado objecto con id: ${req.params.id}`,
           });
         }
       })
-      .catch(error => {
+      .catch((error) => {
         res.status(404).json({
           message: `No se ha encontrado objecto con id: ${req.params.id}`,
-          error
+          error,
         });
       });
   },
 
   register: (model, req, res) => {
     const params = req.body;
-    console.log(params);
+    debug(params);
 
     // check for duplicate 'email' in this case
     if (params && params.email) {
       model
         .findOne({ email: params.email })
-        .then(user => {
+        .then((user) => {
           if (user) {
             res.status(400).json({
               message: "Ya existe un usuario registrado con esos datos",
-              error: {}
+              error: {},
             });
           } else {
             model
               .create(req.body)
-              .then(user => {
+              .then((user) => {
                 createToken(user)
-                  .then(accessToken => {
+                  .then((accessToken) => {
                     console.log("register token response ", accessToken);
                     res.status(200).json({
                       user,
-                      accessToken
+                      accessToken,
                     });
                   })
-                  .catch(error => {
+                  .catch((error) => {
                     return Promise.reject(error);
                   });
               })
-              .catch(error => {
+              .catch((error) => {
                 return Promise.reject(error);
               });
           }
         })
-        .catch(error => {
+        .catch((error) => {
           res.status(400).json({
             message: "Ocurrio un error",
-            error
+            error,
           });
         });
     } else {
       res.status(400).json({
         message: "Ocurrio un error",
-        error: {}
+        error: {},
       });
     }
   },
@@ -201,10 +140,10 @@ module.exports = {
       model
         .findOne({
           user: params.user,
-          password: params.password
+          password: params.password,
         })
         .select("-password")
-        .then(user => {
+        .then((user) => {
           if (user) {
             console.log(`antes de crear token ${user}`);
             return createToken(user);
@@ -212,22 +151,22 @@ module.exports = {
             return Promise.reject(error);
           }
         })
-        .then(accessToken => {
+        .then((accessToken) => {
           console.log("accessToken response ", accessToken);
           res.status(200).json({
-            accessToken
+            accessToken,
           });
         })
-        .catch(error => {
+        .catch((error) => {
           res.status(401).json({
             message: "Login incorrecto",
-            error
+            error,
           });
         });
     } else {
       res.status(401).json({
         message: "Login incorrecto",
-        error: {}
+        error: {},
       });
     }
   },
@@ -236,13 +175,13 @@ module.exports = {
     if (req.params.id) {
       model
         .deleteOne({ _id: req.params.id })
-        .then(data => {
+        .then((data) => {
           res.status(200).json(data);
         })
-        .catch(error => {
+        .catch((error) => {
           res.status(400).json({
             message: error.message || "Error al borrar",
-            error: error
+            error: error,
           });
         });
     } else {
@@ -275,14 +214,14 @@ module.exports = {
       .find(filter)
       .populate(populates || [])
       .sort(sort)
-      .then(find => {
+      .then((find) => {
         console.log(`find result`, find);
         res.status(200).json(find);
       })
-      .catch(error => {
+      .catch((error) => {
         res.status(4004).json({
           message: error.message || "Ocurrio un error inesperado",
-          error
+          error,
         });
       });
   },
@@ -297,29 +236,29 @@ module.exports = {
     if (params.id) {
       model
         .update({ _id: params.id }, params)
-        .then(data => {
+        .then((data) => {
           return res.status(200).json(data);
         })
-        .catch(error => {
+        .catch((error) => {
           return res.status(400).json({
             message: error.message || "no se pudo actualizar objeto",
-            error
+            error,
           });
         });
     } else {
       model
         .create(params)
-        .then(data => {
+        .then((data) => {
           console.log(`create `, data);
           if (data.password) {
             data.password = null;
           }
           return res.status(200).json(data);
         })
-        .catch(error => {
+        .catch((error) => {
           return res.status(400).json({
             message: error.message || "no se pudo crear objeto",
-            error
+            error,
           });
         });
     }
@@ -330,11 +269,11 @@ module.exports = {
     console.log("Upate body", body);
     model
       .findByIdAndUpdate(body._id, body, { new: true })
-      .then(data => {
+      .then((data) => {
         console.log(data);
         return res.status(202).json(data);
       })
-      .catch(err => {
+      .catch((err) => {
         console.log("error", err);
         return res.status(400).json(err);
       });
@@ -343,29 +282,29 @@ module.exports = {
   deleteAll: (model, req, res) => {
     model
       .deleteMany()
-      .then(data => {
+      .then((data) => {
         return res.status(200).json(data);
       })
-      .catch(error => {
+      .catch((error) => {
         return res.status(400).json({
           message: error.message || "no se pudo crear objeto",
-          error
+          error,
         });
       });
   },
 
-  parseQueryString: function(req) {
+  parseQueryString: function (req) {
     var urlParts = url.parse(req.url, true);
     return urlParts.query;
   },
 
-  formatErrors: function(errorsIn) {
-    var errors = [];
+  formatErrors: (errorsIn) => {
+    const errors = [];
 
     if (typeof errorsIn == "object") {
       var error = {
         name: errorsIn["name"],
-        message: errorsIn["message"]
+        message: errorsIn["message"],
       };
 
       if (errorsIn.fields) {
@@ -381,5 +320,5 @@ module.exports = {
 
     return errors;
   },
-  handleError: error => {}
+  handleError: (error) => {},
 };
