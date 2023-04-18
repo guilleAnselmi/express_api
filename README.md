@@ -1,4 +1,4 @@
-# Express basic API 
+# Express basic scaffold API 
 This is a basic scaffold for an Express API integrated with Mongodb using mongoose.
 In this project you can use the last EC6 features thanks to Babel  
 
