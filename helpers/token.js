@@ -14,16 +14,16 @@ const createToken = async (data) => {
   }
 };
 
-// Auth Required middleware
-const required = (req, res, next) => {
+// Auth checkJwt middleware
+const checkJwt = (req, res, next) => {
   const tok = req.headers.authorization || null;
 
   if (tok && tok.split(" ")[0] === "Bearer") {
     jwt.verify(tok.split(" ")[1], process.env.TOKEN_SECRET, (err, token) => {
       if (err) {
+        debug(err)
         return res.status(401).json({
           message: "Unauthorized",
-          error: err,
         });
       }
       debug(`token verificado con exito ${JSON.stringify(token)}`);
@@ -37,4 +37,4 @@ const required = (req, res, next) => {
   }
 };
 
-export { createToken, required };
+export { createToken, checkJwt };
