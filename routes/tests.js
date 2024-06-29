@@ -1,11 +1,10 @@
 import Debug from "debug";
 import express from "express";
 import Test from "../models/test";
+import { checkJwt } from "../utils/token";
 import testController from "../controllers/testController";
-import { checkJwt } from "../helpers/token";
 const api = express.Router();
 const debug = Debug("app:test");
-
 
 // If you wanna use controllers
 api.get("/", testController.findAll);
